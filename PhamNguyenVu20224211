@@ -1,0 +1,125 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+
+using namespace std;
+
+struct Muc {
+    string ten;
+    int soTrang;
+    vector<Muc*> cacMucCon;
+
+    Muc(string tenMuc, int trang) : ten(tenMuc), soTrang(trang) {}
+
+    ~Muc() {
+        for (Muc* mucCon : cacMucCon) {
+            delete mucCon;
+        }
+    }
+};
+
+int demSoChuong(Muc* mucLuc) {
+    if (mucLuc == nullptr) return 0;
+
+    int count = 0;
+    if (mucLuc->cacMucCon.empty()) {
+        return 0;
+    } else {
+        for (Muc* mucCon : mucLuc->cacMucCon) {
+            if(mucCon->cacMucCon.empty())
+                count++;
+            else
+                count+=demSoChuong(mucCon);
+        }
+        return count;
+    }
+}
+
+Muc* timChuongDaiNhat(Muc* mucLuc) {
+    if (mucLuc == nullptr || mucLuc->cacMucCon.empty()) return nullptr;
+
+    Muc* chuongDaiNhat = nullptr;
+    int maxTrang = -1;
+
+    for (Muc* mucCon : mucLuc->cacMucCon) {
+        if(mucCon->cacMucCon.empty()){
+            if (mucCon->soTrang > maxTrang) {
+                maxTrang = mucCon->soTrang;
+                chuongDaiNhat = mucCon;
+            }
+        }
+        else{
+            Muc* temp = timChuongDaiNhat(mucCon);
+            if(temp!=nullptr && temp->soTrang > maxTrang){
+                maxTrang = temp->soTrang;
+                chuongDaiNhat = temp;
+            }
+        }
+    }
+
+    return chuongDaiNhat;
+}
+
+bool xoaMuc(Muc* mucLuc, const string& tenMucCanXoa) {
+    if (mucLuc == nullptr || mucLuc->cacMucCon.empty()) return false;
+
+    for (size_t i = 0; i < mucLuc->cacMucCon.size(); ++i) {
+        if (mucLuc->cacMucCon[i]->ten == tenMucCanXoa) {
+            delete mucLuc->cacMucCon[i];
+            mucLuc->cacMucCon.erase(mucLuc->cacMucCon.begin() + i);
+            return true;
+        }
+        if(xoaMuc(mucLuc->cacMucCon[i], tenMucCanXoa)){
+            return true;
+        }
+    }
+    return false;
+}
+
+void inMucLuc(Muc* mucLuc, int level = 0) {
+    if (mucLuc == nullptr) return;
+    for (int i = 0; i < level; i++) {
+        cout << "  "; // Indentation for hierarchy
+    }
+    cout << mucLuc->ten << " (" << mucLuc->soTrang << " trang)" << endl;
+    for (Muc* mucCon : mucLuc->cacMucCon) {
+        inMucLuc(mucCon, level + 1);
+    }
+}
+
+int main() {
+    Muc* mucLuc = new Muc("Sach Lap Trinh C++", 0);
+
+    Muc* chuong1 = new Muc("Chuong 1: Gioi thieu", 50);
+        chuong1->cacMucCon.push_back(new Muc("1.1: Tong quan",10));
+        chuong1->cacMucCon.push_back(new Muc("1.2: Cai dat",15));
+    mucLuc->cacMucCon.push_back(chuong1);
+
+    Muc* chuong2 = new Muc("Chuong 2: Bien va Kieu du lieu", 70);
+        chuong2->cacMucCon.push_back(new Muc("2.1: Bien",20));
+        chuong2->cacMucCon.push_back(new Muc("2.2: Kieu du lieu",25));
+    mucLuc->cacMucCon.push_back(chuong2);
+
+    Muc* phuLuc = new Muc("Phu luc", 20);
+    mucLuc->cacMucCon.push_back(phuLuc);
+
+    cout << "Muc luc ban dau:" << endl;
+    inMucLuc(mucLuc);
+
+    cout << "\nSo chuong: " << demSoChuong(mucLuc) << endl;
+
+    Muc* chuongDaiNhat = timChuongDaiNhat(mucLuc);
+    if (chuongDaiNhat != nullptr) {
+        cout << "Chuong dai nhat: " << chuongDaiNhat->ten << " (" << chuongDaiNhat->soTrang << " trang)" << endl;
+    }
+
+    if (xoaMuc(mucLuc, "2.1: Bien")) {
+        cout << "\nDa xoa muc '2.1: Bien'" << endl;
+        cout << "Muc luc sau khi xoa:" << endl;
+        inMucLuc(mucLuc);
+    }
+
+    delete mucLuc; // Giải phóng bộ nhớ
+    return 0;
+}
